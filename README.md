@@ -35,11 +35,23 @@ npm run dev
 Інші команди:
 
 ```bash
-npm run build   # production-збірка
-npm run start   # запуск зібраного застосунку
+npm run build   # static export у папку out/
 npm run lint    # ESLint
 ```
 
+## GitHub Pages
+
+Сайт: [https://natalinamatioshko.github.io/household-tracker/](https://natalinamatioshko.github.io/household-tracker/)
+
+Після кожного пушу в `main` GitHub Actions збирає static export і викладає його на гілку `gh-pages`.
+
+**Один раз у Settings → Pages:**
+
+1. Source: **Deploy from a branch**
+2. Branch: **`gh-pages`** / folder **`/(root)`**
+3. Save
+
+Не залишай Source = `main` / root — тоді GitHub показує README через Jekyll замість застосунку.
 ## Структура
 
 ```
@@ -65,3 +77,4 @@ app/
 
 - Усі дані лишаються в поточному браузері; очищення сайту / іншого профілю їх видалить
 - Інтерфейс українською, оптимізований під мобільне користування
+- Для локальної розробки `basePath` не використовується; для GitHub Pages у CI виставляється `GITHUB_PAGES=true`

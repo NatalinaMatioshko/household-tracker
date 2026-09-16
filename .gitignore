@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# local nested leftover (empty dir from flatten; ignore if reappears)
+/household-tracker/
+
 # production
 /build
 
