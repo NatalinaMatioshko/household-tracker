@@ -59,7 +59,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const addPurchase = () => {
     if (!canAddPurchase) return;
 
-    const lastPurchase = product.purchases.slice(-1)[0];
+    const lastPurchase = [...product.purchases].sort((a, b) =>
+      b.datePurchased.localeCompare(a.datePurchased),
+    )[0];
     const dateEnded = newPurchase.dateEnded || lastPurchase?.dateEnded || null;
 
     const purchase: Purchase = {
@@ -76,9 +78,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
     setNewPurchase(emptyNewPurchase());
   };
 
-  const purchasesNewestFirst = [...product.purchases].reverse();
-  const latestId = product.purchases[product.purchases.length - 1]?.id;
-  const latestPurchase = product.purchases[product.purchases.length - 1];
+  const purchasesNewestFirst = [...product.purchases].sort((a, b) =>
+    b.datePurchased.localeCompare(a.datePurchased),
+  );
+  const latestPurchase = purchasesNewestFirst[0];
+  const latestId = latestPurchase?.id;
 
   const setCategory = (category: ProductCategory) => {
     if (category === product.category) return;

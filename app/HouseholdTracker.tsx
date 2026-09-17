@@ -2,7 +2,11 @@
 
 import React, { useRef, useState } from "react";
 import type { Product, Purchase } from "./components/types";
-import { defaultAccentForCategory, optionalText } from "./components/types";
+import {
+  defaultAccentForCategory,
+  optionalText,
+  sortProductsByPurchaseDate,
+} from "./components/types";
 import { useProducts } from "./components/useProducts";
 import AddProductForm, {
   type AddProductFormHandle,
@@ -19,6 +23,7 @@ import EditPurchaseModal, {
 
 const HouseholdTracker: React.FC = () => {
   const { products, setProducts } = useProducts();
+  const sortedProducts = sortProductsByPurchaseDate(products);
   const addFormRef = useRef<AddProductFormHandle>(null);
 
   const openAddForm = (event?: React.MouseEvent<HTMLAnchorElement>) => {
@@ -241,7 +246,7 @@ const HouseholdTracker: React.FC = () => {
               </div>
             ) : (
               <div className="fob-product-grid">
-                {products.map((product, index) => (
+                {sortedProducts.map((product, index) => (
                   <div
                     key={product.id}
                     className="animate-rise"

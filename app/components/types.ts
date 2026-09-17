@@ -108,3 +108,20 @@ export function optionalText(value: string | undefined | null): string | undefin
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
 }
+
+/** Latest purchase date (YYYY-MM-DD), or empty if none. */
+export function latestPurchaseDate(product: Product): string {
+  if (!product.purchases.length) return "";
+  return product.purchases.reduce(
+    (latest, purchase) =>
+      purchase.datePurchased > latest ? purchase.datePurchased : latest,
+    product.purchases[0].datePurchased,
+  );
+}
+
+/** Newest latest-purchase first. */
+export function sortProductsByPurchaseDate(products: Product[]): Product[] {
+  return [...products].sort((a, b) =>
+    latestPurchaseDate(b).localeCompare(latestPurchaseDate(a)),
+  );
+}
