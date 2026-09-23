@@ -20,8 +20,13 @@ import EditPurchaseModal, {
   emptyEditingPurchase,
   type EditingPurchaseState,
 } from "./components/EditPurchaseModal";
+import SignOutButton from "./components/SignOutButton";
 
-const HouseholdTracker: React.FC = () => {
+type HouseholdTrackerProps = {
+  userLabel?: string;
+};
+
+const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
   const { products, setProducts } = useProducts();
   const sortedProducts = sortProductsByPurchaseDate(products);
   const addFormRef = useRef<AddProductFormHandle>(null);
@@ -188,7 +193,12 @@ const HouseholdTracker: React.FC = () => {
           <a href="#top" className="site-nav-brand">
             household <span>—</span> tracker
           </a>
-          <div className="site-nav-side is-right">
+          <div className="site-nav-side is-right site-nav-actions">
+            {userLabel ? (
+              <span className="site-nav-user" title={userLabel}>
+                {userLabel}
+              </span>
+            ) : null}
             <a
               href="#add-product"
               className="btn btn-primary site-nav-cta"
@@ -196,6 +206,7 @@ const HouseholdTracker: React.FC = () => {
             >
               Додати
             </a>
+            <SignOutButton />
           </div>
         </div>
       </header>

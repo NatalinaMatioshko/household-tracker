@@ -1,8 +1,8 @@
+# Deprecated for the multi-user app (Auth.js + Prisma need a Node host).
+# Kept for manual runs only — do not use as the primary deploy path.
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

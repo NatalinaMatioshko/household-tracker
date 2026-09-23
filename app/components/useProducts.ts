@@ -19,21 +19,28 @@ function isCategory(value: unknown): value is ProductCategory {
   );
 }
 
+function asId(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return null;
+}
+
 function normalizePurchase(raw: unknown): Purchase | null {
   if (!raw || typeof raw !== "object") return null;
   const p = raw as Record<string, unknown>;
 
-  if (typeof p.id !== "string" || typeof p.datePurchased !== "string") {
-    return null;
-  }
+  const id = asId(p.id);
+  const datePurchased =
+    typeof p.datePurchased === "string" ? p.datePurchased.trim() : "";
+  if (!id || !datePurchased) return null;
 
   const price = typeof p.price === "number" ? p.price : Number(p.price) || 0;
   const quantity =
     typeof p.quantity === "number" ? p.quantity : Number(p.quantity) || 1;
 
   return {
-    id: p.id,
-    datePurchased: p.datePurchased,
+    id,
+    datePurchased,
     dateEnded:
       typeof p.dateEnded === "string" && p.dateEnded ? p.dateEnded : null,
     price,
@@ -47,8 +54,14 @@ function normalizeProduct(raw: unknown): Product | null {
   if (!raw || typeof raw !== "object") return null;
   const p = raw as Record<string, unknown>;
 
-  if (typeof p.id !== "string" || typeof p.name !== "string") return null;
-  if (!isCategory(p.category)) return null;
+  const id = asId(p.id);
+  const name = typeof p.name === "string" ? p.name.trim() : "";
+  if (!id || !name) return null;
+
+  // Keep unknown/legacy categories instead of dropping the whole product.
+  const category: ProductCategory = isCategory(p.category)
+    ? p.category
+    : "Інше";
 
   const purchases = Array.isArray(p.purchases)
     ? p.purchases
@@ -66,9 +79,9 @@ function normalizeProduct(raw: unknown): Product | null {
       : undefined;
 
   return {
-    id: p.id,
-    name: p.name,
-    category: p.category,
+    id,
+    name,
+    category,
     brand: optionalText(typeof p.brand === "string" ? p.brand : undefined),
     image,
     accentColor,

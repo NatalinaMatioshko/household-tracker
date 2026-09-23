@@ -1,20 +1,13 @@
 import type { NextConfig } from "next";
 
-/** Set in CI when building for GitHub Pages project site. */
-const isGithubPages = process.env.GITHUB_PAGES === "true";
-const repoName = "household-tracker";
-
+/**
+ * Node-compatible Next.js config (Auth.js + Prisma need a server runtime).
+ * Static GitHub Pages export was removed in Phase 3.
+ */
 const nextConfig: NextConfig = {
-  output: "export",
   images: {
     unoptimized: true,
   },
-  ...(isGithubPages
-    ? {
-        basePath: `/${repoName}`,
-        assetPrefix: `/${repoName}/`,
-      }
-    : {}),
 };
 
 export default nextConfig;
