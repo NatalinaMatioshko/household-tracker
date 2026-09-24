@@ -1,13 +1,21 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import type { Product, Purchase } from "./components/types";
+import React, { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import type { NewProductInput, Product, Purchase } from "./components/types";
+import { optionalText, sortProductsByPurchaseDate } from "./components/types";
+import type { AddPurchaseInput } from "./components/ProductCard";
 import {
-  defaultAccentForCategory,
-  optionalText,
-  sortProductsByPurchaseDate,
-} from "./components/types";
-import { useProducts } from "./components/useProducts";
+  createProduct,
+  deleteProduct as deleteProductAction,
+  updateProduct as updateProductAction,
+} from "@/app/actions/products";
+import {
+  createPurchase,
+  deletePurchase as deletePurchaseAction,
+  setPurchaseDateEnded,
+  updatePurchase as updatePurchaseAction,
+} from "@/app/actions/purchases";
 import AddProductForm, {
   type AddProductFormHandle,
 } from "./components/AddProductForm";
@@ -23,13 +31,32 @@ import EditPurchaseModal, {
 import SignOutButton from "./components/SignOutButton";
 
 type HouseholdTrackerProps = {
+  initialProducts: Product[];
   userLabel?: string;
+  loadError?: string | null;
 };
 
-const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
-  const { products, setProducts } = useProducts();
-  const sortedProducts = sortProductsByPurchaseDate(products);
+const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
+  initialProducts,
+  userLabel,
+  loadError,
+}) => {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const products = sortProductsByPurchaseDate(initialProducts);
   const addFormRef = useRef<AddProductFormHandle>(null);
+
+  const [addError, setAddError] = useState<string | null>(null);
+  const [productError, setProductError] = useState<string | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [productPending, setProductPending] = useState(false);
+  const [purchasePending, setPurchasePending] = useState(false);
+
+  const refresh = () => {
+    startTransition(() => {
+      router.refresh();
+    });
+  };
 
   const openAddForm = (event?: React.MouseEvent<HTMLAnchorElement>) => {
     event?.preventDefault();
@@ -41,144 +68,169 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
   const [editingPurchase, setEditingPurchase] =
     useState<EditingPurchaseState>(emptyEditingPurchase);
 
-  const addProduct = (product: Product) => {
-    setProducts([...products, product]);
+  const addProduct = async (input: NewProductInput) => {
+    setAddError(null);
+
+    const productResult = await createProduct({
+      name: input.name,
+      category: input.category,
+    });
+    if (!productResult.ok) {
+      setAddError(productResult.error);
+      throw new Error(productResult.error);
+    }
+
+    const purchaseResult = await createPurchase({
+      productId: productResult.data.id,
+      datePurchased: input.datePurchased,
+      price: input.price,
+      quantity: input.quantity,
+      notes: input.notes,
+    });
+    if (!purchaseResult.ok) {
+      setAddError(purchaseResult.error);
+      throw new Error(purchaseResult.error);
+    }
+
+    refresh();
   };
 
-  const addPurchaseToProduct = (productId: string, purchase: Purchase) => {
-    setProducts(
-      products.map((p) =>
-        p.id === productId
-          ? { ...p, purchases: [...p.purchases, purchase] }
-          : p,
-      ),
-    );
+  const addPurchaseToProduct = async (
+    productId: string,
+    purchase: AddPurchaseInput,
+  ) => {
+    const result = await createPurchase({
+      productId,
+      datePurchased: purchase.datePurchased,
+      dateEnded: purchase.dateEnded || undefined,
+      price: purchase.price,
+      quantity: purchase.quantity,
+      notes: purchase.notes,
+    });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+    refresh();
   };
 
   const fixDateEnded = (
-    productId: string,
+    _productId: string,
     purchaseId: string,
     dateEnded: string,
   ) => {
-    setProducts(
-      products.map((p) =>
-        p.id === productId
-          ? {
-              ...p,
-              purchases: p.purchases.map((pk) =>
-                pk.id === purchaseId
-                  ? { ...pk, dateEnded: dateEnded || null }
-                  : pk,
-              ),
-            }
-          : p,
-      ),
-    );
+    void (async () => {
+      const result = await setPurchaseDateEnded({
+        purchaseId,
+        dateEnded: dateEnded || null,
+      });
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+      refresh();
+    })();
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts(products.filter((p) => p.id !== id));
+  const removeProduct = (id: string) => {
+    void (async () => {
+      const result = await deleteProductAction({ productId: id });
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+      refresh();
+    })();
   };
 
-  const updateProduct = (productId: string, patch: Partial<Product>) => {
-    setProducts(
-      products.map((p) => (p.id === productId ? { ...p, ...patch } : p)),
-    );
-  };
-
-  const deletePurchase = (productId: string, purchaseId: string) => {
-    setProducts(
-      products.map((p) =>
-        p.id === productId
-          ? {
-              ...p,
-              purchases: p.purchases.filter((pk) => pk.id !== purchaseId),
-            }
-          : p,
-      ),
-    );
+  const removePurchase = (_productId: string, purchaseId: string) => {
+    void (async () => {
+      const result = await deletePurchaseAction({ purchaseId });
+      if (!result.ok) {
+        window.alert(result.error);
+        return;
+      }
+      refresh();
+    })();
   };
 
   const openEditProduct = (product: Product) => {
+    setProductError(null);
     setEditingProduct({
       isOpen: true,
       productId: product.id,
       name: product.name,
       category: product.category,
-      brand: product.brand || "",
-      image: product.image,
-      accentColor:
-        product.accentColor ?? defaultAccentForCategory(product.category),
     });
   };
 
   const saveEditProduct = () => {
     if (!editingProduct.productId || !editingProduct.name.trim()) return;
 
-    setProducts(
-      products.map((p) =>
-        p.id === editingProduct.productId
-          ? {
-              ...p,
-              name: editingProduct.name.trim(),
-              category: editingProduct.category,
-              brand: optionalText(editingProduct.brand),
-              image: editingProduct.image,
-              accentColor: editingProduct.accentColor,
-            }
-          : p,
-      ),
-    );
-
-    setEditingProduct(emptyEditingProduct());
+    void (async () => {
+      setProductPending(true);
+      setProductError(null);
+      try {
+        const result = await updateProductAction({
+          productId: editingProduct.productId,
+          name: editingProduct.name.trim(),
+          category: editingProduct.category,
+        });
+        if (!result.ok) {
+          setProductError(result.error);
+          return;
+        }
+        setEditingProduct(emptyEditingProduct());
+        refresh();
+      } finally {
+        setProductPending(false);
+      }
+    })();
   };
 
-  const openEditPurchase = (product: Product, purchase: Purchase) => {
+  const openEditPurchase = (_product: Product, purchase: Purchase) => {
+    setPurchaseError(null);
     setEditingPurchase({
       isOpen: true,
-      productId: product.id,
+      productId: _product.id,
       purchaseId: purchase.id,
       datePurchased: purchase.datePurchased,
       dateEnded: purchase.dateEnded || "",
       price: purchase.price,
       quantity: purchase.quantity,
-      store: purchase.store || "",
       notes: purchase.notes || "",
     });
   };
 
   const saveEditPurchase = () => {
     if (
-      !editingPurchase.productId ||
       !editingPurchase.purchaseId ||
-      !editingPurchase.datePurchased
+      !editingPurchase.datePurchased ||
+      editingPurchase.price <= 0
     )
       return;
 
-    setProducts(
-      products.map((p) =>
-        p.id === editingPurchase.productId
-          ? {
-              ...p,
-              purchases: p.purchases.map((pk) =>
-                pk.id === editingPurchase.purchaseId
-                  ? {
-                      ...pk,
-                      datePurchased: editingPurchase.datePurchased,
-                      dateEnded: editingPurchase.dateEnded || null,
-                      price: editingPurchase.price,
-                      quantity: editingPurchase.quantity,
-                      store: optionalText(editingPurchase.store),
-                      notes: optionalText(editingPurchase.notes),
-                    }
-                  : pk,
-              ),
-            }
-          : p,
-      ),
-    );
-
-    setEditingPurchase(emptyEditingPurchase());
+    void (async () => {
+      setPurchasePending(true);
+      setPurchaseError(null);
+      try {
+        const result = await updatePurchaseAction({
+          purchaseId: editingPurchase.purchaseId,
+          datePurchased: editingPurchase.datePurchased,
+          dateEnded: editingPurchase.dateEnded || null,
+          price: editingPurchase.price,
+          quantity: editingPurchase.quantity || 1,
+          notes: optionalText(editingPurchase.notes) ?? null,
+        });
+        if (!result.ok) {
+          setPurchaseError(result.error);
+          return;
+        }
+        setEditingPurchase(emptyEditingPurchase());
+        refresh();
+      } finally {
+        setPurchasePending(false);
+      }
+    })();
   };
 
   return (
@@ -222,8 +274,18 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
           </p>
         </section>
 
+        {loadError ? (
+          <p className="auth-error mb-6" role="alert">
+            {loadError}
+          </p>
+        ) : null}
+
         <div className="space-y-8 sm:space-y-12 md:space-y-14">
-          <AddProductForm ref={addFormRef} onAdd={addProduct} />
+          <AddProductForm
+            ref={addFormRef}
+            onAdd={addProduct}
+            error={addError}
+          />
 
           <section
             id="products"
@@ -257,7 +319,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
               </div>
             ) : (
               <div className="fob-product-grid">
-                {sortedProducts.map((product, index) => (
+                {products.map((product, index) => (
                   <div
                     key={product.id}
                     className="animate-rise"
@@ -265,11 +327,10 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
                   >
                     <ProductCard
                       product={product}
-                      onDelete={deleteProduct}
+                      onDelete={removeProduct}
                       onEditProduct={openEditProduct}
-                      onUpdateProduct={updateProduct}
                       onEditPurchase={openEditPurchase}
-                      onDeletePurchase={deletePurchase}
+                      onDeletePurchase={removePurchase}
                       onFixDateEnded={fixDateEnded}
                       onAddPurchase={addPurchaseToProduct}
                     />
@@ -286,6 +347,8 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
         onChange={setEditingProduct}
         onSave={saveEditProduct}
         onCancel={() => setEditingProduct(emptyEditingProduct())}
+        pending={productPending}
+        error={productError}
       />
 
       <EditPurchaseModal
@@ -293,6 +356,8 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({ userLabel }) => {
         onChange={setEditingPurchase}
         onSave={saveEditPurchase}
         onCancel={() => setEditingPurchase(emptyEditingPurchase())}
+        pending={purchasePending}
+        error={purchaseError}
       />
     </div>
   );

@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Legacy localStorage hook — unused by the main tracker flow (Phase 5).
+ * Kept temporarily for Phase 6 cleanup; do not wire back into the UI.
+ */
 import { useSyncExternalStore } from "react";
 import type { Product, ProductCategory, Purchase } from "./types";
 import { CATEGORY_OPTIONS, optionalText } from "./types";
@@ -45,7 +49,6 @@ function normalizePurchase(raw: unknown): Purchase | null {
       typeof p.dateEnded === "string" && p.dateEnded ? p.dateEnded : null,
     price,
     quantity: quantity > 0 ? quantity : 1,
-    store: optionalText(typeof p.store === "string" ? p.store : undefined),
     notes: optionalText(typeof p.notes === "string" ? p.notes : undefined),
   };
 }
@@ -58,10 +61,8 @@ function normalizeProduct(raw: unknown): Product | null {
   const name = typeof p.name === "string" ? p.name.trim() : "";
   if (!id || !name) return null;
 
-  // Keep unknown/legacy categories instead of dropping the whole product.
-  const category: ProductCategory = isCategory(p.category)
-    ? p.category
-    : "Інше";
+  // Skip products whose category is outside MVP HYGIENE|CARE.
+  if (!isCategory(p.category)) return null;
 
   const purchases = Array.isArray(p.purchases)
     ? p.purchases
@@ -69,22 +70,10 @@ function normalizeProduct(raw: unknown): Product | null {
         .filter((purchase): purchase is Purchase => purchase !== null)
     : [];
 
-  const image =
-    typeof p.image === "string" && p.image.startsWith("data:image/")
-      ? p.image
-      : undefined;
-  const accentColor =
-    typeof p.accentColor === "string" && /^#[0-9A-Fa-f]{6}$/.test(p.accentColor)
-      ? p.accentColor
-      : undefined;
-
   return {
     id,
     name,
-    category,
-    brand: optionalText(typeof p.brand === "string" ? p.brand : undefined),
-    image,
-    accentColor,
+    category: p.category,
     purchases,
   };
 }

@@ -1,40 +1,36 @@
 "use client";
 
 import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
-import type { Product, ProductCategory } from "./types";
-import {
-  ACCENT_SWATCHES,
-  CATEGORY_OPTIONS,
-  defaultAccentForCategory,
-  optionalText,
-} from "./types";
+import type { NewProductInput, ProductCategory } from "./types";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS, optionalText } from "./types";
 import DatePicker from "./DatePicker";
-import ImageUploadField from "./ImageUploadField";
 
 export type AddProductFormHandle = {
   open: () => void;
 };
 
 interface AddProductFormProps {
-  onAdd: (product: Product) => void;
+  onAdd: (input: NewProductInput) => Promise<void> | void;
+  error?: string | null;
   ref?: React.Ref<AddProductFormHandle>;
 }
 
 const emptyForm = () => ({
   name: "",
-  category: "Гігієна" as ProductCategory,
-  brand: "",
-  image: undefined as string | undefined,
-  accentColor: defaultAccentForCategory("Гігієна"),
+  category: "HYGIENE" as ProductCategory,
   datePurchased: "",
   price: 0,
   quantity: 1,
-  store: "",
   notes: "",
 });
 
-const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
+const AddProductForm: React.FC<AddProductFormProps> = ({
+  onAdd,
+  error,
+  ref,
+}) => {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
   const [newProduct, setNewProduct] = useState(emptyForm);
   const sectionRef = useRef<HTMLElement>(null);
   const focusTimerRef = useRef<number | null>(null);
@@ -77,34 +73,26 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
   const canSubmit =
     Boolean(newProduct.name.trim()) &&
     newProduct.price > 0 &&
-    Boolean(newProduct.datePurchased);
+    Boolean(newProduct.datePurchased) &&
+    !pending;
 
-  const addProduct = () => {
+  const addProduct = async () => {
     if (!canSubmit) return;
-
-    const product: Product = {
-      id: crypto.randomUUID(),
-      name: newProduct.name.trim(),
-      category: newProduct.category,
-      brand: optionalText(newProduct.brand),
-      image: newProduct.image,
-      accentColor: newProduct.accentColor,
-      purchases: [
-        {
-          id: crypto.randomUUID(),
-          datePurchased: newProduct.datePurchased,
-          dateEnded: null,
-          price: newProduct.price,
-          quantity: newProduct.quantity || 1,
-          store: optionalText(newProduct.store),
-          notes: optionalText(newProduct.notes),
-        },
-      ],
-    };
-
-    onAdd(product);
-    setNewProduct(emptyForm());
-    setOpen(false);
+    setPending(true);
+    try {
+      await onAdd({
+        name: newProduct.name.trim(),
+        category: newProduct.category,
+        datePurchased: newProduct.datePurchased,
+        price: newProduct.price,
+        quantity: newProduct.quantity || 1,
+        notes: optionalText(newProduct.notes),
+      });
+      setNewProduct(emptyForm());
+      setOpen(false);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -129,9 +117,9 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
 
       <div
         id="add-product-panel"
-        className={`add-form-panel${open ? " is-open" : ""}`}
+        className="add-form-panel"
         aria-hidden={!open}
-        inert={open ? undefined : true}
+        inert={!open ? true : undefined}
       >
         <div className="add-form-panel-inner">
           <div className="section-surface add-form-compact overflow-hidden">
@@ -146,7 +134,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                     Додати засіб
                   </h2>
                   <p className="add-form-lead">
-                    Назва, категорія, фото, покупка, бренд і де куплено.
+                    Назва, категорія, дата покупки, ціна й кількість.
                   </p>
                 </div>
                 <button
@@ -155,24 +143,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                   onClick={closeForm}
                   aria-label="Згорнути форму"
                 >
-                  <span className="add-form-collapse-icon" aria-hidden="true">
-                    <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-                      <path
-                        d="M2.25 7.75L6 4l3.75 3.75"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
                   <span className="add-form-collapse-label">Згорнути</span>
                 </button>
               </div>
             </div>
 
             <div className="add-form-grid">
-              <div className="add-form-span-2-desktop">
+              <div className="add-form-span-2">
                 <label className="label" htmlFor="product-name">
                   Назва
                 </label>
@@ -181,29 +158,11 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                   type="text"
                   className="field"
                   placeholder="Напр. Шампунь"
+                  autoComplete="off"
                   value={newProduct.name}
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, name: e.target.value })
                   }
-                  autoComplete="off"
-                  enterKeyHint="next"
-                />
-              </div>
-
-              <div>
-                <label className="label" htmlFor="product-brand">
-                  Бренд
-                </label>
-                <input
-                  id="product-brand"
-                  type="text"
-                  className="field"
-                  placeholder="Напр. L'Oreal"
-                  value={newProduct.brand}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, brand: e.target.value })
-                  }
-                  autoComplete="off"
                 />
               </div>
 
@@ -212,7 +171,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                   Категорія
                 </span>
                 <div
-                  className="pill-group pill-group-scroll"
+                  className="pill-group"
                   role="group"
                   aria-labelledby="product-category-label"
                 >
@@ -223,59 +182,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                       className={`pill-option${newProduct.category === option ? " is-selected" : ""}`}
                       aria-pressed={newProduct.category === option}
                       onClick={() =>
-                        setNewProduct({
-                          ...newProduct,
-                          category: option,
-                          accentColor:
-                            newProduct.accentColor ===
-                            defaultAccentForCategory(newProduct.category)
-                              ? defaultAccentForCategory(option)
-                              : newProduct.accentColor,
-                        })
+                        setNewProduct({ ...newProduct, category: option })
                       }
                     >
-                      {option}
+                      {CATEGORY_LABELS[option]}
                     </button>
                   ))}
-                </div>
-              </div>
-
-              <div className="add-form-span-2">
-                <ImageUploadField
-                  id="product-image"
-                  value={newProduct.image}
-                  onChange={(image) => setNewProduct({ ...newProduct, image })}
-                />
-              </div>
-
-              <div className="add-form-span-2">
-                <span className="label" id="product-accent-label">
-                  Колір акценту
-                </span>
-                <div
-                  className="fob-swatch-row fob-swatch-row-touch"
-                  role="radiogroup"
-                  aria-labelledby="product-accent-label"
-                >
-                  {ACCENT_SWATCHES.map((swatch) => {
-                    const selected =
-                      newProduct.accentColor.toLowerCase() ===
-                      swatch.toLowerCase();
-                    return (
-                      <button
-                        key={swatch}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        className={`fob-swatch${selected ? " is-selected" : ""}`}
-                        style={{ backgroundColor: swatch }}
-                        onClick={() =>
-                          setNewProduct({ ...newProduct, accentColor: swatch })
-                        }
-                        title={swatch}
-                      />
-                    );
-                  })}
                 </div>
               </div>
 
@@ -336,24 +248,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                 />
               </div>
 
-              <div>
-                <label className="label" htmlFor="product-store">
-                  Де куплено
-                </label>
-                <input
-                  id="product-store"
-                  type="text"
-                  className="field"
-                  placeholder="Напр. АТБ, Rozetka"
-                  value={newProduct.store}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, store: e.target.value })
-                  }
-                  autoComplete="off"
-                />
-              </div>
-
-              <div className="add-form-span-2-desktop">
+              <div className="add-form-span-2">
                 <label className="label" htmlFor="product-notes">
                   Примітка
                 </label>
@@ -370,6 +265,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
               </div>
             </div>
 
+            {error ? (
+              <p className="auth-error" role="alert" style={{ margin: "1rem" }}>
+                {error}
+              </p>
+            ) : null}
+
             <div className="add-form-actions">
               <div className="add-form-actions-btns">
                 <button
@@ -378,18 +279,19 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onAdd, ref }) => {
                   onClick={addProduct}
                   disabled={!canSubmit}
                 >
-                  Додати — засіб
+                  {pending ? "Збереження…" : "Додати — засіб"}
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary add-form-cancel"
                   onClick={closeForm}
+                  disabled={pending}
                 >
                   Скасувати
                 </button>
               </div>
               <p className="add-form-footnote">
-                Дані зберігаються локально у вашому браузері.
+                Дані зберігаються у вашому акаунті (PostgreSQL).
               </p>
             </div>
           </div>

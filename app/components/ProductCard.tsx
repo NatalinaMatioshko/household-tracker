@@ -1,24 +1,28 @@
 "use client";
 
 import React, { useId, useState } from "react";
-import type { Product, ProductCategory, Purchase, NewPurchaseForm } from "./types";
+import type { Product, Purchase, NewPurchaseForm } from "./types";
 import {
-  ACCENT_SWATCHES,
-  CATEGORY_OPTIONS,
-  defaultAccentForCategory,
+  CATEGORY_LABELS,
   emptyNewPurchase,
   formatDateUk,
   formatPrice,
   optionalText,
 } from "./types";
 import DatePicker from "./DatePicker";
-import ImageUploadField from "./ImageUploadField";
+
+export type AddPurchaseInput = {
+  datePurchased: string;
+  dateEnded?: string | null;
+  price: number;
+  quantity: number;
+  notes?: string;
+};
 
 interface ProductCardProps {
   product: Product;
   onDelete: (productId: string) => void;
   onEditProduct: (product: Product) => void;
-  onUpdateProduct: (productId: string, patch: Partial<Product>) => void;
   onEditPurchase: (product: Product, purchase: Purchase) => void;
   onDeletePurchase: (productId: string, purchaseId: string) => void;
   onFixDateEnded: (
@@ -26,7 +30,10 @@ interface ProductCardProps {
     purchaseId: string,
     dateEnded: string,
   ) => void;
-  onAddPurchase: (productId: string, purchase: Purchase) => void;
+  onAddPurchase: (
+    productId: string,
+    purchase: AddPurchaseInput,
+  ) => Promise<void> | void;
 }
 
 function purchaseCountLabel(count: number): string {
@@ -40,42 +47,46 @@ const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onDelete,
   onEditProduct,
-  onUpdateProduct,
   onEditPurchase,
   onDeletePurchase,
   onFixDateEnded,
   onAddPurchase,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [newPurchase, setNewPurchase] =
     useState<NewPurchaseForm>(emptyNewPurchase);
   const panelId = useId();
 
-  const accent =
-    product.accentColor ?? defaultAccentForCategory(product.category);
   const canAddPurchase =
-    Boolean(newPurchase.datePurchased) && newPurchase.price > 0;
+    Boolean(newPurchase.datePurchased) && newPurchase.price > 0 && !pending;
 
-  const addPurchase = () => {
+  const addPurchase = async () => {
     if (!canAddPurchase) return;
 
     const lastPurchase = [...product.purchases].sort((a, b) =>
       b.datePurchased.localeCompare(a.datePurchased),
     )[0];
-    const dateEnded = newPurchase.dateEnded || lastPurchase?.dateEnded || null;
+    const dateEnded =
+      newPurchase.dateEnded || lastPurchase?.dateEnded || null;
 
-    const purchase: Purchase = {
-      id: crypto.randomUUID(),
-      datePurchased: newPurchase.datePurchased,
-      dateEnded,
-      price: newPurchase.price,
-      quantity: newPurchase.quantity || 1,
-      store: optionalText(newPurchase.store),
-      notes: optionalText(newPurchase.notes),
-    };
-
-    onAddPurchase(product.id, purchase);
-    setNewPurchase(emptyNewPurchase());
+    setPending(true);
+    setError(null);
+    try {
+      await onAddPurchase(product.id, {
+        datePurchased: newPurchase.datePurchased,
+        dateEnded,
+        price: newPurchase.price,
+        quantity: newPurchase.quantity || 1,
+        notes: optionalText(newPurchase.notes),
+      });
+      setNewPurchase(emptyNewPurchase());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не вдалося додати покупку.");
+    } finally {
+      setPending(false);
+    }
   };
 
   const purchasesNewestFirst = [...product.purchases].sort((a, b) =>
@@ -83,40 +94,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
   );
   const latestPurchase = purchasesNewestFirst[0];
   const latestId = latestPurchase?.id;
-
-  const setCategory = (category: ProductCategory) => {
-    if (category === product.category) return;
-    onUpdateProduct(product.id, {
-      category,
-      accentColor: product.accentColor ?? defaultAccentForCategory(category),
-    });
-  };
+  const categoryText = CATEGORY_LABELS[product.category];
 
   return (
     <article
       className={`product-card fob-card section-surface h-full overflow-hidden transition-[border-color,box-shadow] duration-300 ${expanded ? "is-expanded" : ""}`}
-      style={{ "--fob-accent": accent } as React.CSSProperties}
     >
       <div className="fob-card-body">
-        <div className="fob-card-top">
-          <ImageUploadField
-            variant="slot"
-            value={product.image}
-            onChange={(image) => onUpdateProduct(product.id, { image })}
-            id={`photo-${product.id}`}
-          />
-
+        <div className="fob-card-top fob-card-top-simple">
           <div className="fob-card-controls">
             <h3 className="fob-card-title">{product.name}</h3>
             <div className="fob-card-subtitle">
-              {product.brand ? (
-                <span className="fob-card-brand">{product.brand}</span>
-              ) : null}
-              <span
-                className="category-chip"
-                data-category={product.category}
-              >
-                {product.category}
+              <span className="category-chip" data-category={categoryText}>
+                {categoryText}
               </span>
             </div>
 
@@ -125,67 +115,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 {formatDateUk(latestPurchase.datePurchased)}
                 {" · "}
                 {formatPrice(latestPurchase.price)}
-                {latestPurchase.store ? ` · ${latestPurchase.store}` : ""}
               </p>
             ) : null}
             {!expanded && !latestPurchase ? (
               <p className="fob-card-meta-line is-muted">
                 Немає покупок — відкрийте деталі
               </p>
-            ) : null}
-
-            {expanded ? (
-              <>
-                <div className="fob-control-block">
-                  <span className="fob-control-label">Категорія:</span>
-                  <div
-                    className="pill-group pill-group-scroll fob-pill-group"
-                    role="group"
-                  >
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={`pill-option fob-pill${product.category === option ? " is-selected" : ""}`}
-                        aria-pressed={product.category === option}
-                        onClick={() => setCategory(option)}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="fob-control-block">
-                  <span className="fob-control-label">Колір:</span>
-                  <div
-                    className="fob-swatch-row fob-swatch-row-touch"
-                    role="radiogroup"
-                    aria-label="Колір акценту"
-                  >
-                    {ACCENT_SWATCHES.map((swatch) => {
-                      const selected =
-                        accent.toLowerCase() === swatch.toLowerCase();
-                      return (
-                        <button
-                          key={swatch}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          className={`fob-swatch${selected ? " is-selected" : ""}`}
-                          style={{ backgroundColor: swatch }}
-                          onClick={() =>
-                            onUpdateProduct(product.id, {
-                              accentColor: swatch,
-                            })
-                          }
-                          title={swatch}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
             ) : null}
           </div>
         </div>
@@ -201,9 +136,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   <span className="fob-meta-row-label">Остання покупка</span>
                   <span className="fob-meta-row-detail">
                     {formatDateUk(latestPurchase.datePurchased)}
-                    {latestPurchase.store
-                      ? ` · ${latestPurchase.store}`
-                      : ""}
                     {" · "}
                     {purchaseCountLabel(product.purchases.length)}
                   </span>
@@ -336,7 +268,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   Нова покупка
                 </h4>
                 <p className="mt-1 text-sm text-ink-muted">
-                  Ціна, кількість, магазин і дати.
+                  Дата, ціна, кількість і примітка.
                 </p>
               </div>
 
@@ -428,28 +360,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 <div>
                   <label
                     className="label"
-                    htmlFor={`np-store-${product.id}`}
-                  >
-                    Де куплено
-                  </label>
-                  <input
-                    id={`np-store-${product.id}`}
-                    type="text"
-                    className="field"
-                    placeholder="Напр. АТБ"
-                    value={newPurchase.store}
-                    onChange={(e) =>
-                      setNewPurchase({
-                        ...newPurchase,
-                        store: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className="label"
                     htmlFor={`np-notes-${product.id}`}
                   >
                     Примітка
@@ -470,13 +380,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 </div>
               </div>
 
+              {error ? (
+                <p className="auth-error mt-3" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
               <button
                 type="button"
                 className="btn btn-primary mt-5 w-full"
                 onClick={addPurchase}
                 disabled={!canAddPurchase}
               >
-                Додати — покупку
+                {pending ? "Збереження…" : "Додати — покупку"}
               </button>
             </section>
 
@@ -583,19 +499,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
                           </div>
                         </div>
 
-                        {(purchase.store || purchase.notes) && (
-                          <div className="mt-3 space-y-1 text-sm leading-relaxed text-ink-soft">
-                            {purchase.store ? (
-                              <p>
-                                <span className="text-ink-muted">
-                                  Де куплено:
-                                </span>{" "}
-                                {purchase.store}
-                              </p>
-                            ) : null}
-                            {purchase.notes ? <p>{purchase.notes}</p> : null}
+                        {purchase.notes ? (
+                          <div className="mt-3 text-sm leading-relaxed text-ink-soft">
+                            <p>{purchase.notes}</p>
                           </div>
-                        )}
+                        ) : null}
                       </li>
                     );
                   })}

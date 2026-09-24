@@ -2,32 +2,21 @@
 
 import React from "react";
 import type { ProductCategory } from "./types";
-import {
-  ACCENT_SWATCHES,
-  CATEGORY_OPTIONS,
-  defaultAccentForCategory,
-} from "./types";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "./types";
 import Modal from "./Modal";
-import ImageUploadField from "./ImageUploadField";
 
 export interface EditingProductState {
   isOpen: boolean;
   productId: string | null;
   name: string;
   category: ProductCategory;
-  brand: string;
-  image?: string;
-  accentColor: string;
 }
 
 export const emptyEditingProduct = (): EditingProductState => ({
   isOpen: false,
   productId: null,
   name: "",
-  category: "Гігієна",
-  brand: "",
-  image: undefined,
-  accentColor: ACCENT_SWATCHES[2],
+  category: "HYGIENE",
 });
 
 interface EditProductModalProps {
@@ -35,6 +24,8 @@ interface EditProductModalProps {
   onChange: (state: EditingProductState) => void;
   onSave: () => void;
   onCancel: () => void;
+  pending?: boolean;
+  error?: string | null;
 }
 
 const EditProductModal: React.FC<EditProductModalProps> = ({
@@ -42,10 +33,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   onChange,
   onSave,
   onCancel,
+  pending = false,
+  error,
 }) => {
   if (!editingProduct.isOpen) return null;
 
-  const canSave = Boolean(editingProduct.name.trim());
+  const canSave = Boolean(editingProduct.name.trim()) && !pending;
 
   return (
     <Modal title="Редагувати засіб" onClose={onCancel}>
@@ -65,18 +58,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           />
         </div>
 
-        <ImageUploadField
-          id="edit-product-image"
-          value={editingProduct.image}
-          onChange={(image) => onChange({ ...editingProduct, image })}
-        />
-
         <div>
           <span className="label" id="edit-product-category-label">
             Категорія
           </span>
           <div
-            className="pill-group pill-group-scroll"
+            className="pill-group"
             role="group"
             aria-labelledby="edit-product-category-label"
           >
@@ -90,70 +77,29 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   onChange({
                     ...editingProduct,
                     category: option,
-                    accentColor:
-                      editingProduct.accentColor ===
-                        defaultAccentForCategory(editingProduct.category)
-                        ? defaultAccentForCategory(option)
-                        : editingProduct.accentColor,
                   })
                 }
               >
-                {option}
+                {CATEGORY_LABELS[option]}
               </button>
             ))}
           </div>
         </div>
 
-        <div>
-          <span className="label" id="edit-product-accent-label">
-            Колір акценту
-          </span>
-          <div
-            className="fob-swatch-row fob-swatch-row-touch"
-            role="radiogroup"
-            aria-labelledby="edit-product-accent-label"
-          >
-            {ACCENT_SWATCHES.map((swatch) => {
-              const selected =
-                editingProduct.accentColor.toLowerCase() ===
-                swatch.toLowerCase();
-              return (
-                <button
-                  key={swatch}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  className={`fob-swatch${selected ? " is-selected" : ""}`}
-                  style={{ backgroundColor: swatch }}
-                  onClick={() =>
-                    onChange({ ...editingProduct, accentColor: swatch })
-                  }
-                  title={swatch}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <label className="label" htmlFor="edit-product-brand">
-            Бренд
-          </label>
-          <input
-            id="edit-product-brand"
-            type="text"
-            className="field"
-            placeholder="Напр. L'Oreal"
-            value={editingProduct.brand}
-            onChange={(e) =>
-              onChange({ ...editingProduct, brand: e.target.value })
-            }
-          />
-        </div>
+        {error ? (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </div>
 
       <div className="modal-actions">
-        <button type="button" className="btn btn-secondary" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={onCancel}
+          disabled={pending}
+        >
           Скасувати
         </button>
         <button
@@ -162,7 +108,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           onClick={onSave}
           disabled={!canSave}
         >
-          Зберегти
+          {pending ? "Збереження…" : "Зберегти"}
         </button>
       </div>
     </Modal>

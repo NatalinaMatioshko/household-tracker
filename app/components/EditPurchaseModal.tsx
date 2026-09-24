@@ -12,7 +12,6 @@ export interface EditingPurchaseState {
   dateEnded: string;
   price: number;
   quantity: number;
-  store: string;
   notes: string;
 }
 
@@ -24,7 +23,6 @@ export const emptyEditingPurchase = (): EditingPurchaseState => ({
   dateEnded: "",
   price: 0,
   quantity: 1,
-  store: "",
   notes: "",
 });
 
@@ -33,6 +31,8 @@ interface EditPurchaseModalProps {
   onChange: (state: EditingPurchaseState) => void;
   onSave: () => void;
   onCancel: () => void;
+  pending?: boolean;
+  error?: string | null;
 }
 
 const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
@@ -40,10 +40,15 @@ const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
   onChange,
   onSave,
   onCancel,
+  pending = false,
+  error,
 }) => {
   if (!editingPurchase.isOpen) return null;
 
-  const canSave = Boolean(editingPurchase.datePurchased);
+  const canSave =
+    Boolean(editingPurchase.datePurchased) &&
+    editingPurchase.price > 0 &&
+    !pending;
 
   return (
     <Modal title="Редагувати покупку" onClose={onCancel} wide>
@@ -119,25 +124,6 @@ const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
         </div>
 
         <div>
-          <label className="label" htmlFor="edit-purchase-store">
-            Де куплено
-          </label>
-          <input
-            id="edit-purchase-store"
-            type="text"
-            className="field"
-            value={editingPurchase.store}
-            onChange={(e) =>
-              onChange({
-                ...editingPurchase,
-                store: e.target.value,
-              })
-            }
-            placeholder="Напр. АТБ, Rozetka"
-          />
-        </div>
-
-        <div>
           <label className="label" htmlFor="edit-purchase-notes">
             Примітка
           </label>
@@ -155,10 +141,21 @@ const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
             placeholder="Необовʼязково"
           />
         </div>
+
+        {error ? (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </div>
 
       <div className="modal-actions">
-        <button type="button" className="btn btn-secondary" onClick={onCancel}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={onCancel}
+          disabled={pending}
+        >
           Скасувати
         </button>
         <button
@@ -167,7 +164,7 @@ const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
           onClick={onSave}
           disabled={!canSave}
         >
-          Зберегти
+          {pending ? "Збереження…" : "Зберегти"}
         </button>
       </div>
     </Modal>
