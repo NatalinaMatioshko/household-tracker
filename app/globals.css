@@ -410,33 +410,6 @@
     gap: 0.5rem;
   }
 
-  .pill-group-scroll {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    margin: 0 -0.15rem;
-    padding: 0.15rem 0.15rem 0.35rem;
-  }
-
-  .pill-group-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  .pill-group-scroll .pill-option {
-    flex: 0 0 auto;
-  }
-
-  @media (min-width: 768px) {
-    .pill-group-scroll {
-      flex-wrap: wrap;
-      overflow: visible;
-      margin: 0;
-      padding: 0;
-    }
-  }
-
   .pill-option {
     display: inline-flex;
     align-items: center;
@@ -467,11 +440,6 @@
     border-color: transparent;
   }
 
-  .fob-pill:not(.is-selected) {
-    background: var(--mint-pale);
-    color: var(--ink-muted);
-  }
-
   .category-chip {
     display: inline-flex;
     align-items: center;
@@ -492,26 +460,6 @@
   .category-chip[data-category="Догляд"] {
     background: var(--pastel-peach);
     color: #6a4034;
-  }
-
-  .category-chip[data-category="Побутова хімія"] {
-    background: #d4e8f6;
-    color: #335a72;
-  }
-
-  .category-chip[data-category="Прання"] {
-    background: #e2eef8;
-    color: #3a5a70;
-  }
-
-  .category-chip[data-category="Кухня"] {
-    background: #f5e4da;
-    color: #6a4534;
-  }
-
-  .category-chip[data-category="Інше"] {
-    background: #e8e0f4;
-    color: #4a3d66;
   }
 
   .form-stack {
@@ -955,7 +903,6 @@
   }
 
   .fob-card {
-    --fob-accent: var(--mint);
     border-color: var(--fob-line);
     border-radius: 16px;
     box-shadow: 0 5px 22px rgba(20, 20, 20, 0.05), 0 1px 2px rgba(20, 20, 20, 0.03);
@@ -972,209 +919,7 @@
   }
 
   .fob-card-top {
-    display: grid;
-    grid-template-columns: 56px minmax(0, 1fr);
-    gap: 0.65rem;
-    align-items: start;
-  }
-
-  .fob-card-top-simple {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  @media (min-width: 640px) {
-    .fob-card-top {
-      grid-template-columns: 72px minmax(0, 1fr);
-      gap: 0.85rem;
-    }
-
-    .fob-card-top-simple {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  .product-card.is-expanded .fob-card-top {
-    grid-template-columns: 72px minmax(0, 1fr);
-  }
-
-  .product-card.is-expanded .fob-card-top-simple {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  @media (min-width: 640px) {
-    .product-card.is-expanded .fob-card-top {
-      grid-template-columns: 96px minmax(0, 1fr);
-      gap: 1.1rem;
-    }
-
-    .product-card.is-expanded .fob-card-top-simple {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  .fob-image-slot {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    aspect-ratio: 3 / 3.85;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--fob-accent) 26%, #fff);
-    overflow: hidden;
-  }
-
-  .product-card.is-expanded .fob-image-slot {
-    aspect-ratio: 3 / 4.2;
-    border-radius: 14px;
-  }
-
-  .fob-image-slot-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .fob-image-slot-actions {
-    position: absolute;
-    inset: auto 0 0 0;
-    display: flex;
-    gap: 0.3rem;
-    justify-content: center;
-    padding: 0.4rem;
-    background: linear-gradient(180deg, transparent, rgba(20, 20, 20, 0.45));
-    opacity: 1;
-    transition: opacity 0.2s var(--ease-out);
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .fob-image-slot-actions {
-      opacity: 0;
-    }
-
-    .fob-image-slot:hover .fob-image-slot-actions,
-    .fob-image-slot:focus-within .fob-image-slot-actions {
-      opacity: 1;
-    }
-  }
-
-  .fob-image-slot-btn {
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--ink);
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    min-height: 1.7rem;
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
-  }
-
-  .fob-image-slot-btn.is-muted {
-    background: rgba(255, 255, 255, 0.72);
-    color: var(--ink-soft);
-  }
-
-  .fob-image-slot-btn:disabled {
-    opacity: 0.6;
-    cursor: wait;
-  }
-
-  .fob-image-placeholder {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    padding: 0.45rem 0.3rem;
-    color: var(--ink-muted);
-  }
-
-  .fob-image-placeholder:hover {
-    color: var(--ink-soft);
-  }
-
-  .fob-image-placeholder:disabled {
-    cursor: wait;
-    opacity: 0.7;
-  }
-
-  .fob-image-placeholder-label {
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    text-align: center;
-    line-height: 1.2;
-  }
-
-  .fob-image-placeholder-cta {
-    display: none;
-  }
-
-  .product-card.is-expanded .fob-image-placeholder-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 0.15rem;
-    min-height: 1.55rem;
-    padding: 0.2rem 0.7rem;
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--ink);
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    box-shadow: 0 1px 4px rgba(20, 20, 20, 0.08);
-  }
-
-  .fob-bottle-silhouette {
-    width: 36%;
-    max-width: 2.1rem;
-    aspect-ratio: 1 / 2.35;
-    border-radius: 0.55rem 0.55rem 0.85rem 0.85rem;
-    background: color-mix(in srgb, var(--fob-accent, var(--mint)) 55%, #fff);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
-    position: relative;
-  }
-
-  .fob-bottle-silhouette::before {
-    content: "";
-    position: absolute;
-    left: 28%;
-    right: 28%;
-    top: -10%;
-    height: 14%;
-    border-radius: 0.2rem;
-    background: color-mix(in srgb, var(--ink-muted) 35%, #fff);
-  }
-
-  .fob-bottle-silhouette.is-sm {
-    max-width: 1.85rem;
-    width: 1.85rem;
-  }
-
-  .fob-image-error {
-    position: absolute;
-    inset: auto 0.25rem 0.25rem;
-    margin: 0;
-    padding: 0.2rem 0.3rem;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--danger);
-    font-size: 0.58rem;
-    line-height: 1.25;
-    text-align: center;
+    min-width: 0;
   }
 
   .fob-card-controls {
@@ -1203,12 +948,6 @@
     margin-top: 0.25rem;
   }
 
-  .fob-card-brand {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--ink-muted);
-  }
-
   .fob-card-meta-line {
     margin: 0.4rem 0 0;
     font-size: 0.78rem;
@@ -1218,62 +957,6 @@
 
   .fob-card-meta-line.is-muted {
     color: var(--ink-muted);
-  }
-
-  .fob-control-block {
-    margin-top: 0.7rem;
-  }
-
-  .fob-control-label {
-    display: block;
-    margin-bottom: 0.35rem;
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--ink-muted);
-  }
-
-  .fob-pill-group {
-    gap: 0.35rem;
-    max-height: none;
-  }
-
-  .fob-pill {
-    min-height: 2.5rem;
-    padding: 0.35rem 0.85rem;
-    font-size: 0.82rem;
-  }
-
-  .fob-swatch-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    align-items: center;
-  }
-
-  .fob-swatch-row-touch .fob-swatch {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .fob-swatch {
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 0;
-    border-radius: 999px;
-    padding: 0;
-    cursor: pointer;
-    box-shadow: inset 0 0 0 1px rgba(20, 20, 20, 0.06);
-    transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
-  }
-
-  .fob-swatch:hover {
-    transform: scale(1.08);
-  }
-
-  .fob-swatch.is-selected {
-    box-shadow:
-      0 0 0 1.5px #fff,
-      0 0 0 3px var(--ink);
   }
 
   .fob-divider {

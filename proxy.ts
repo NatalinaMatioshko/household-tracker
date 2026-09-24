@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 /**
  * Protects app routes: guests → /login, signed-in users skip auth pages.
  * /api/auth/* stays public so Auth.js can set cookies.
+ *
+ * Next.js 16: file convention renamed middleware → proxy.
  */
 export default auth((req) => {
   const { pathname } = req.nextUrl;

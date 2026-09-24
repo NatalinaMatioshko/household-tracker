@@ -1,80 +1,104 @@
 # Household Tracker
 
-Особистий трекер засобів гігієни, догляду та побутової хімії. Допомагає фіксувати покупки, ціни, бренди, місце купівлі та дату закінчення засобу.
+Особистий трекер засобів гігієни та догляду. Допомагає фіксувати покупки, ціни й дату закінчення засобу.
 
-Проєкт створений з власної потреби в такому застосунку — щоб зручно вести облік домашніх засобів і розуміти, коли що закінчується і скільки коштує повторна покупка.
+Проєкт створений з власної потреби — зручно вести облік домашніх засобів і розуміти, коли що закінчується та скільки коштує повторна покупка.
 
-Дані зберігаються локально в браузері (`localStorage`) — бекенд не потрібен.
+Дані зберігаються в **PostgreSQL** для кожного користувача (Auth.js + Prisma). Статичний GitHub Pages більше не є основним способом деплою.
 
 ## Можливості
 
-- Додавання засобу: назва, категорія, бренд, фото, дата покупки, ціна, кількість, де куплено, примітка
-- Категорії: Гігієна, Догляд, Побутова хімія, Прання, Кухня, Інше
+- Реєстрація / вхід (email + пароль)
+- Додавання засобу: назва, категорія, дата покупки, ціна, кількість, примітка
+- Категорії MVP: **Гігієна**, **Догляд**
 - Історія покупок і повторні закупівлі
 - Дата закінчення засобу (кастомний календар uk-UA)
-- Згортані картки товарів, зручні для мобільного
+- Згортані картки, зручні для мобільного
 - Редагування / видалення засобів і покупок
-- Завантаження фото з комп’ютера (стискається перед збереженням)
+- Ізоляція даних між користувачами (`Product.userId`)
 
 ## Стек
 
-- [Next.js](https://nextjs.org) 16 (App Router)
+- [Next.js](https://nextjs.org) 16 (App Router, Node runtime)
 - React 19
 - TypeScript
 - Tailwind CSS 4
+- [Prisma](https://www.prisma.io) 6 + PostgreSQL
+- [Auth.js](https://authjs.dev) (`next-auth` v5) — JWT, email/password
+- Zod
 
-## Запуск
+## Налаштування
+
+1. Скопіюй `.env.example` → `.env` і заповни значення.
+
+```bash
+cp .env.example .env
+```
+
+Потрібні змінні:
+
+| Змінна | Призначення |
+|--------|-------------|
+| `DATABASE_URL` | PostgreSQL (для Supabase — Session pooler + `sslmode=require`) |
+| `AUTH_SECRET` | Секрет сесій Auth.js (`openssl rand -base64 32`) |
+| `AUTH_URL` | Опційно в локалі; обовʼязково на проді (публічний URL застосунку) |
+
+2. Встанови залежності, згенеруй клієнт Prisma і застосуй міграції:
 
 ```bash
 npm install
+npm run db:generate
+npm run db:migrate
+```
+
+3. Запусти dev-сервер:
+
+```bash
 npm run dev
 ```
 
-Відкрий [http://localhost:3000](http://localhost:3000).
+Відкрий [http://localhost:3000](http://localhost:3000). Гості перенаправляються на `/login`.
 
 Інші команди:
 
 ```bash
-npm run build   # static export у папку out/
-npm run lint    # ESLint
+npm run build      # production build (потрібен Node host, не static export)
+npm run start      # запуск зібраного застосунку
+npm run lint
+npm run db:studio  # Prisma Studio
 ```
 
-## GitHub Pages
+## Деплой
 
-Сайт: [https://natalinamatioshko.github.io/household-tracker/](https://natalinamatioshko.github.io/household-tracker/)
+Потрібен **Node.js host** (Vercel, Railway, Fly.io, VPS тощо): Auth.js cookies + Prisma не працюють як чистий static export на GitHub Pages.
 
-Після кожного пушу в `main` GitHub Actions збирає static export і викладає його на гілку `gh-pages`.
+Типовий чекліст:
 
-**Один раз у Settings → Pages:**
+1. Створи PostgreSQL (наприклад Supabase) і вкажи `DATABASE_URL`
+2. Вистав `AUTH_SECRET` і `AUTH_URL` (HTTPS URL продакшену)
+3. Запусти `prisma migrate deploy` на середовищі (або під час CI/CD)
+4. Збери й запусти: `npm run build` → `npm run start` (або платформенний Next.js adapter)
 
-1. Source: **Deploy from a branch**
-2. Branch: **`gh-pages`** / folder **`/(root)`**
-3. Save
+Workflow `.github/workflows/deploy-pages.yml` залишено лише для ручного `workflow_dispatch` і **не** є основним шляхом деплою.
 
-Не залишай Source = `main` / root — тоді GitHub показує README через Jekyll замість застосунку.
-## Структура
+## Структура (коротко)
 
 ```
 app/
-  HouseholdTracker.tsx   # головна композиція
-  page.tsx
-  layout.tsx
-  globals.css
-  components/
-    AddProductForm.tsx
-    ProductCard.tsx
-    DatePicker.tsx
-    EditProductModal.tsx
-    EditPurchaseModal.tsx
-    ImageUploadField.tsx
-    Modal.tsx
-    useProducts.ts       # стан + localStorage
-    types.ts
-    imageUtils.ts
+  page.tsx                 # SSR: getProducts → HouseholdTracker
+  HouseholdTracker.tsx     # UI + Server Actions
+  actions/                 # auth, products, purchases
+  components/              # форми, картки, модалки, DatePicker
+  login/ register/
+lib/
+  auth.ts prisma.ts session.ts validators.ts mapProduct.ts
+prisma/
+  schema.prisma
+proxy.ts                   # захист маршрутів (Auth.js)
 ```
 
 ## Примітки
 
-- Усі дані лишаються в поточному браузері; очищення сайту / іншого профілю їх видалить
 - Інтерфейс українською, оптимізований під мобільне користування
-- Для локальної розробки `basePath` не використовується; для GitHub Pages у CI виставляється `GITHUB_PAGES=true`
+- Старі дані з `localStorage` (`householdProducts`) **не** імпортуються автоматично
+- MVP без фото, бренду, магазину та кольору акценту

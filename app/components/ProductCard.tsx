@@ -101,7 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       className={`product-card fob-card section-surface h-full overflow-hidden transition-[border-color,box-shadow] duration-300 ${expanded ? "is-expanded" : ""}`}
     >
       <div className="fob-card-body">
-        <div className="fob-card-top fob-card-top-simple">
+        <div className="fob-card-top">
           <div className="fob-card-controls">
             <h3 className="fob-card-title">{product.name}</h3>
             <div className="fob-card-subtitle">
