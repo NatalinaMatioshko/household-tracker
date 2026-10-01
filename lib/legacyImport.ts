@@ -1,12 +1,12 @@
 import type { ProductCategory } from "@/app/components/types";
-import { CATEGORY_LABELS } from "@/app/components/types";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "@/app/components/types";
 
 /**
  * Legacy localStorage / export shape (householdProducts):
  * [
  *   {
- *     id, name, category ("Гігієна"|"Догляд"|…),
- *     brand?, image?, accentColor?,   // ignored
+ *     id, name, category (UA label or enum),
+ *     brand?, image?, accentColor?,   // image/accent ignored
  *     purchases: [{ id, datePurchased, dateEnded?, price, quantity, store?, notes? }]
  *   }
  * ]
@@ -17,11 +17,13 @@ export type ImportablePurchase = {
   dateEnded: string | null;
   price: number;
   quantity: number;
+  store?: string;
   notes?: string;
 };
 
 export type ImportableProduct = {
   name: string;
+  brand?: string;
   category: ProductCategory;
   purchases: ImportablePurchase[];
 };
@@ -37,6 +39,10 @@ export type LegacyParseResult = {
 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const LABEL_TO_CATEGORY = Object.fromEntries(
+  CATEGORY_OPTIONS.map((key) => [CATEGORY_LABELS[key], key]),
+) as Record<string, ProductCategory>;
 
 function asDateOnly(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -63,22 +69,18 @@ function optionalText(value: unknown): string | undefined {
 }
 
 /**
- * Strict MVP mapping only:
- * - "Гігієна" / HYGIENE → HYGIENE
- * - "Догляд" / CARE → CARE
- * Anything else → not importable (caller counts as skipped).
+ * Map legacy Ukrainian labels / enum strings to Category.
+ * Unknown categories → skipped (not forced into OTHER).
  */
 export function mapLegacyCategory(raw: unknown): ProductCategory | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
   const value = raw.trim();
 
-  if (value === "HYGIENE" || value === CATEGORY_LABELS.HYGIENE) {
-    return "HYGIENE";
+  if ((CATEGORY_OPTIONS as string[]).includes(value)) {
+    return value as ProductCategory;
   }
-  if (value === "CARE" || value === CATEGORY_LABELS.CARE) {
-    return "CARE";
-  }
-  return null;
+
+  return LABEL_TO_CATEGORY[value] ?? null;
 }
 
 function normalizePurchase(raw: unknown): ImportablePurchase | null {
@@ -89,7 +91,7 @@ function normalizePurchase(raw: unknown): ImportablePurchase | null {
   const price = asPositiveNumber(p.price);
   if (!datePurchased || price == null) return null;
 
-  // Ignore store, brand, image, accentColor, id, and other UI metadata.
+  // Ignore image, accentColor, id. Keep store + notes.
   const dateEndedRaw = p.dateEnded;
   const dateEnded =
     dateEndedRaw == null || dateEndedRaw === ""
@@ -101,6 +103,7 @@ function normalizePurchase(raw: unknown): ImportablePurchase | null {
     dateEnded,
     price,
     quantity: asPositiveInt(p.quantity, 1),
+    store: optionalText(p.store)?.slice(0, 120),
     notes: optionalText(p.notes)?.slice(0, 500),
   };
 }
@@ -121,10 +124,15 @@ function normalizeProduct(raw: unknown): ImportableProduct | null {
     }
   }
 
-  return { name, category, purchases };
+  return {
+    name,
+    brand: optionalText(p.brand)?.slice(0, 120),
+    category,
+    purchases,
+  };
 }
 
-/** Parse pasted / recovered householdProducts JSON into MVP import rows. */
+/** Parse pasted / recovered householdProducts JSON into import rows. */
 export function parseLegacyProductsJson(raw: string): LegacyParseResult {
   const empty = (parseError: string | null = null): LegacyParseResult => ({
     products: [],
@@ -202,6 +210,8 @@ export function purchaseFingerprint(purchase: {
 export function productMatchKey(
   name: string,
   category: ProductCategory,
+  brand?: string | null,
 ): string {
-  return `${name.trim().toLowerCase()}|${category}`;
+  const brandKey = (brand ?? "").trim().toLowerCase();
+  return `${name.trim().toLowerCase()}|${category}|${brandKey}`;
 }

@@ -462,6 +462,26 @@
     color: #6a4034;
   }
 
+  .category-chip[data-category="Побутова хімія"] {
+    background: #d4e8f6;
+    color: #335a72;
+  }
+
+  .category-chip[data-category="Прання"] {
+    background: #e2eef8;
+    color: #3a5a70;
+  }
+
+  .category-chip[data-category="Кухня"] {
+    background: #f5e4da;
+    color: #6a4534;
+  }
+
+  .category-chip[data-category="Інше"] {
+    background: #e8e0f4;
+    color: #4a3d66;
+  }
+
   .form-stack {
     display: grid;
     gap: 1rem;
@@ -946,6 +966,12 @@
     align-items: center;
     gap: 0.35rem 0.45rem;
     margin-top: 0.25rem;
+  }
+
+  .fob-card-brand {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
   }
 
   .fob-card-meta-line {

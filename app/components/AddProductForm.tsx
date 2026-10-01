@@ -17,10 +17,12 @@ interface AddProductFormProps {
 
 const emptyForm = () => ({
   name: "",
+  brand: "",
   category: "HYGIENE" as ProductCategory,
   datePurchased: "",
   price: 0,
   quantity: 1,
+  store: "",
   notes: "",
 });
 
@@ -82,10 +84,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
     try {
       await onAdd({
         name: newProduct.name.trim(),
+        brand: optionalText(newProduct.brand),
         category: newProduct.category,
         datePurchased: newProduct.datePurchased,
         price: newProduct.price,
         quantity: newProduct.quantity || 1,
+        store: optionalText(newProduct.store),
         notes: optionalText(newProduct.notes),
       });
       setNewProduct(emptyForm());
@@ -136,7 +140,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
                     Додати засіб
                   </h2>
                   <p className="add-form-lead">
-                    Назва, категорія, дата покупки, ціна й кількість.
+                    Назва, бренд, категорія, дата покупки, ціна, кількість і де
+                    куплено.
                   </p>
                 </div>
                 <button
@@ -164,6 +169,23 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
                   value={newProduct.name}
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="add-form-span-2">
+                <label className="label" htmlFor="product-brand">
+                  Бренд
+                </label>
+                <input
+                  id="product-brand"
+                  type="text"
+                  className="field"
+                  placeholder="Напр. L'Oréal"
+                  autoComplete="off"
+                  value={newProduct.brand}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, brand: e.target.value })
                   }
                 />
               </div>
@@ -246,6 +268,22 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
                       ...newProduct,
                       quantity: parseInt(e.target.value, 10) || 0,
                     })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="label" htmlFor="product-store">
+                  Де куплено
+                </label>
+                <input
+                  id="product-store"
+                  type="text"
+                  className="field"
+                  placeholder="Напр. АТБ"
+                  value={newProduct.store}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, store: e.target.value })
                   }
                 />
               </div>

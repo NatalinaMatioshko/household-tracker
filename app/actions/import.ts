@@ -33,7 +33,7 @@ function formatZodError(error: { issues: { message: string }[] }): string {
  * into the signed-in user's database records.
  *
  * Duplicate rules:
- * - Product: same user + same name (case-insensitive) + same category → reuse
+ * - Product: same user + same name (case-insensitive) + category + brand → reuse
  * - Purchase: same product + same datePurchased + price + quantity → skip
  */
 export async function importLocalProducts(
@@ -60,7 +60,11 @@ export async function importLocalProducts(
     >();
 
     for (const product of existing) {
-      const key = productMatchKey(product.name, product.category);
+      const key = productMatchKey(
+        product.name,
+        product.category,
+        product.brand,
+      );
       byKey.set(key, {
         id: product.id,
         purchaseKeys: new Set(
@@ -82,7 +86,12 @@ export async function importLocalProducts(
 
     await prisma.$transaction(async (tx) => {
       for (const item of parsed.data.products) {
-        const key = productMatchKey(item.name, item.category as Category);
+        const brand = item.brand?.trim() || null;
+        const key = productMatchKey(
+          item.name,
+          item.category as Category,
+          brand,
+        );
         let entry = byKey.get(key);
 
         if (!entry) {
@@ -90,6 +99,7 @@ export async function importLocalProducts(
             data: {
               userId,
               name: item.name,
+              brand,
               category: item.category,
             },
           });
@@ -116,6 +126,7 @@ export async function importLocalProducts(
               dateEnded: purchase.dateEnded
                 ? parseDateOnly(purchase.dateEnded)
                 : null,
+              store: purchase.store?.trim() || null,
               notes: purchase.notes?.trim() || null,
             },
           });

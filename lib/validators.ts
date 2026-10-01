@@ -8,14 +8,19 @@ export const dateStringSchema = z
 
 export const categorySchema = z.nativeEnum(Category);
 
+const optionalShortText = z.string().trim().max(120).nullish();
+const optionalNotes = z.string().trim().max(500).nullish();
+
 export const createProductSchema = z.object({
   name: z.string().trim().min(1, "Вкажіть назву засобу").max(120),
+  brand: optionalShortText,
   category: categorySchema,
 });
 
 export const updateProductSchema = z.object({
   productId: z.string().min(1),
   name: z.string().trim().min(1, "Вкажіть назву засобу").max(120),
+  brand: optionalShortText,
   category: categorySchema,
 });
 
@@ -30,7 +35,8 @@ export const createPurchaseSchema = z.object({
   datePurchased: dateStringSchema,
   // nullish: Server Actions often serialize missing optional fields as null
   dateEnded: dateStringSchema.nullish(),
-  notes: z.string().trim().max(500).nullish(),
+  store: optionalShortText,
+  notes: optionalNotes,
 });
 
 export const updatePurchaseSchema = z.object({
@@ -39,7 +45,8 @@ export const updatePurchaseSchema = z.object({
   quantity: z.number().int().positive("Кількість має бути цілим числом > 0"),
   datePurchased: dateStringSchema,
   dateEnded: dateStringSchema.nullish(),
-  notes: z.string().trim().max(500).nullish(),
+  store: optionalShortText,
+  notes: optionalNotes,
 });
 
 export const purchaseIdSchema = z.object({
@@ -57,11 +64,13 @@ export const importPurchaseSchema = z.object({
   dateEnded: dateStringSchema.nullish(),
   price: z.number().finite().positive(),
   quantity: z.number().int().positive(),
-  notes: z.string().trim().max(500).nullish(),
+  store: optionalShortText,
+  notes: optionalNotes,
 });
 
 export const importProductSchema = z.object({
   name: z.string().trim().min(1).max(120),
+  brand: optionalShortText,
   category: categorySchema,
   purchases: z.array(importPurchaseSchema).max(200),
 });

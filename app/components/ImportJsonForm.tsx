@@ -63,12 +63,14 @@ const ImportJsonForm: React.FC = () => {
       const response = await importLocalProducts({
         products: preview.products.map((product) => ({
           name: product.name,
+          brand: product.brand,
           category: product.category,
           purchases: product.purchases.map((purchase) => ({
             datePurchased: purchase.datePurchased,
             dateEnded: purchase.dateEnded,
             price: purchase.price,
             quantity: purchase.quantity,
+            store: purchase.store,
             notes: purchase.notes,
           })),
         })),
@@ -102,10 +104,9 @@ const ImportJsonForm: React.FC = () => {
               spellCheck={false}
             />
             <p className="mt-2 text-sm text-ink-muted">
-              Імпортуються лише name, category, purchases (datePurchased,
-              dateEnded, price, quantity, notes). Поля image, brand, store,
-              accentColor ігноруються. Категорії поза «Гігієна» / «Догляд»
-              пропускаються.
+              Імпортуються name, brand, category, purchases (datePurchased,
+              dateEnded, price, quantity, store, notes). Поля image та
+              accentColor ігноруються. Невідомі категорії пропускаються.
             </p>
           </div>
 
@@ -155,17 +156,22 @@ const ImportJsonForm: React.FC = () => {
                 key={`${product.name}-${product.category}-${index}`}
                 className="rounded-[14px] border border-[var(--stone-line)] px-4 py-3"
               >
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="font-serif text-lg font-semibold text-ink">
-                    {product.name}
-                  </span>
-                  <span className="text-sm text-ink-muted">
-                    {CATEGORY_LABELS[product.category]}
-                  </span>
-                  <span className="text-sm text-ink-muted">
-                    · {product.purchases.length} покупок
-                  </span>
-                </div>
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="font-serif text-lg font-semibold text-ink">
+                      {product.name}
+                    </span>
+                    {product.brand ? (
+                      <span className="text-sm text-ink-muted">
+                        {product.brand}
+                      </span>
+                    ) : null}
+                    <span className="text-sm text-ink-muted">
+                      {CATEGORY_LABELS[product.category]}
+                    </span>
+                    <span className="text-sm text-ink-muted">
+                      · {product.purchases.length} покупок
+                    </span>
+                  </div>
                 {product.purchases.length > 0 ? (
                   <ul className="mt-2 space-y-1 text-sm text-ink-soft">
                     {product.purchases.slice(0, 5).map((purchase, pIndex) => (

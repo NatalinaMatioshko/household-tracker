@@ -16,6 +16,7 @@ export type AddPurchaseInput = {
   dateEnded?: string | null;
   price: number;
   quantity: number;
+  store?: string;
   notes?: string;
 };
 
@@ -79,6 +80,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         dateEnded,
         price: newPurchase.price,
         quantity: newPurchase.quantity || 1,
+        store: optionalText(newPurchase.store),
         notes: optionalText(newPurchase.notes),
       });
       setNewPurchase(emptyNewPurchase());
@@ -105,6 +107,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className="fob-card-controls">
             <h3 className="fob-card-title">{product.name}</h3>
             <div className="fob-card-subtitle">
+              {product.brand ? (
+                <span className="fob-card-brand">{product.brand}</span>
+              ) : null}
               <span className="category-chip" data-category={categoryText}>
                 {categoryText}
               </span>
@@ -115,6 +120,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 {formatDateUk(latestPurchase.datePurchased)}
                 {" · "}
                 {formatPrice(latestPurchase.price)}
+                {latestPurchase.store ? ` · ${latestPurchase.store}` : ""}
               </p>
             ) : null}
             {!expanded && !latestPurchase ? (
@@ -136,6 +142,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   <span className="fob-meta-row-label">Остання покупка</span>
                   <span className="fob-meta-row-detail">
                     {formatDateUk(latestPurchase.datePurchased)}
+                    {latestPurchase.store
+                      ? ` · ${latestPurchase.store}`
+                      : ""}
                     {" · "}
                     {purchaseCountLabel(product.purchases.length)}
                   </span>
@@ -268,7 +277,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   Нова покупка
                 </h4>
                 <p className="mt-1 text-sm text-ink-muted">
-                  Дата, ціна, кількість і примітка.
+                  Дата, ціна, кількість, де куплено і примітка.
                 </p>
               </div>
 
@@ -352,6 +361,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
                       setNewPurchase({
                         ...newPurchase,
                         quantity: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="label"
+                    htmlFor={`np-store-${product.id}`}
+                  >
+                    Де куплено
+                  </label>
+                  <input
+                    id={`np-store-${product.id}`}
+                    type="text"
+                    className="field"
+                    placeholder="Напр. АТБ"
+                    value={newPurchase.store}
+                    onChange={(e) =>
+                      setNewPurchase({
+                        ...newPurchase,
+                        store: e.target.value,
                       })
                     }
                   />
@@ -499,11 +530,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
                           </div>
                         </div>
 
-                        {purchase.notes ? (
-                          <div className="mt-3 text-sm leading-relaxed text-ink-soft">
-                            <p>{purchase.notes}</p>
+                        {(purchase.store || purchase.notes) && (
+                          <div className="mt-3 space-y-1 text-sm leading-relaxed text-ink-soft">
+                            {purchase.store ? (
+                              <p>
+                                <span className="text-ink-muted">
+                                  Де куплено:
+                                </span>{" "}
+                                {purchase.store}
+                              </p>
+                            ) : null}
+                            {purchase.notes ? <p>{purchase.notes}</p> : null}
                           </div>
-                        ) : null}
+                        )}
                       </li>
                     );
                   })}

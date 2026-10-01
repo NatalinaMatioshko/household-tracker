@@ -1,11 +1,28 @@
-/** MVP product categories — matches Prisma enum Category. */
-export type ProductCategory = "HYGIENE" | "CARE";
+/** Product categories — matches Prisma enum Category. */
+export type ProductCategory =
+  | "HYGIENE"
+  | "CARE"
+  | "HOUSEHOLD_CHEMICALS"
+  | "LAUNDRY"
+  | "KITCHEN"
+  | "OTHER";
 
-export const CATEGORY_OPTIONS: ProductCategory[] = ["HYGIENE", "CARE"];
+export const CATEGORY_OPTIONS: ProductCategory[] = [
+  "HYGIENE",
+  "CARE",
+  "HOUSEHOLD_CHEMICALS",
+  "LAUNDRY",
+  "KITCHEN",
+  "OTHER",
+];
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   HYGIENE: "Гігієна",
   CARE: "Догляд",
+  HOUSEHOLD_CHEMICALS: "Побутова хімія",
+  LAUNDRY: "Прання",
+  KITCHEN: "Кухня",
+  OTHER: "Інше",
 };
 
 export function categoryLabel(category: ProductCategory): string {
@@ -18,12 +35,14 @@ export interface Purchase {
   dateEnded: string | null;
   price: number;
   quantity: number;
+  store?: string;
   notes?: string;
 }
 
 export interface Product {
   id: string;
   name: string;
+  brand?: string;
   category: ProductCategory;
   purchases: Purchase[];
 }
@@ -33,6 +52,7 @@ export interface NewPurchaseForm {
   dateEnded: string;
   price: number;
   quantity: number;
+  store: string;
   notes: string;
 }
 
@@ -41,16 +61,19 @@ export const emptyNewPurchase = (): NewPurchaseForm => ({
   dateEnded: "",
   price: 0,
   quantity: 1,
+  store: "",
   notes: "",
 });
 
 /** Payload to create a product + first purchase together in the UI. */
 export interface NewProductInput {
   name: string;
+  brand?: string;
   category: ProductCategory;
   datePurchased: string;
   price: number;
   quantity: number;
+  store?: string;
   notes?: string;
 }
 

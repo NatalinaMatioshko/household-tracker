@@ -16,6 +16,7 @@ export default async function Home() {
         productsResult.data as Array<{
           id: string;
           name: string;
+          brand: string | null;
           category: ProductCategory;
           purchases: Array<{
             id: string;
@@ -23,6 +24,7 @@ export default async function Home() {
             quantity: number;
             datePurchased: Date;
             dateEnded: Date | null;
+            store: string | null;
             notes: string | null;
           }>;
         }>

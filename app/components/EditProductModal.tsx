@@ -9,6 +9,7 @@ export interface EditingProductState {
   isOpen: boolean;
   productId: string | null;
   name: string;
+  brand: string;
   category: ProductCategory;
 }
 
@@ -16,6 +17,7 @@ export const emptyEditingProduct = (): EditingProductState => ({
   isOpen: false,
   productId: null,
   name: "",
+  brand: "",
   category: "HYGIENE",
 });
 
@@ -55,6 +57,22 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             onChange={(e) =>
               onChange({ ...editingProduct, name: e.target.value })
             }
+          />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="edit-product-brand">
+            Бренд
+          </label>
+          <input
+            id="edit-product-brand"
+            type="text"
+            className="field"
+            value={editingProduct.brand}
+            onChange={(e) =>
+              onChange({ ...editingProduct, brand: e.target.value })
+            }
+            placeholder="Необовʼязково"
           />
         </div>
 

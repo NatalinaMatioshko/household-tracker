@@ -73,6 +73,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
 
     const productResult = await createProduct({
       name: input.name,
+      ...(input.brand ? { brand: input.brand } : {}),
       category: input.category,
     });
     if (!productResult.ok) {
@@ -85,6 +86,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
       datePurchased: input.datePurchased,
       price: input.price,
       quantity: input.quantity,
+      ...(input.store ? { store: input.store } : {}),
       ...(input.notes ? { notes: input.notes } : {}),
     });
     if (!purchaseResult.ok) {
@@ -105,6 +107,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
       ...(purchase.dateEnded ? { dateEnded: purchase.dateEnded } : {}),
       price: purchase.price,
       quantity: purchase.quantity,
+      ...(purchase.store ? { store: purchase.store } : {}),
       ...(purchase.notes ? { notes: purchase.notes } : {}),
     });
     if (!result.ok) {
@@ -159,6 +162,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
       isOpen: true,
       productId: product.id,
       name: product.name,
+      brand: product.brand || "",
       category: product.category,
     });
   };
@@ -173,6 +177,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
         const result = await updateProductAction({
           productId: editingProduct.productId,
           name: editingProduct.name.trim(),
+          brand: optionalText(editingProduct.brand) ?? null,
           category: editingProduct.category,
         });
         if (!result.ok) {
@@ -197,6 +202,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
       dateEnded: purchase.dateEnded || "",
       price: purchase.price,
       quantity: purchase.quantity,
+      store: purchase.store || "",
       notes: purchase.notes || "",
     });
   };
@@ -219,6 +225,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
           dateEnded: editingPurchase.dateEnded || null,
           price: editingPurchase.price,
           quantity: editingPurchase.quantity || 1,
+          store: optionalText(editingPurchase.store) ?? null,
           notes: optionalText(editingPurchase.notes) ?? null,
         });
         if (!result.ok) {

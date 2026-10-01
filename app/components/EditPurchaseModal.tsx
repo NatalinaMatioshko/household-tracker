@@ -12,6 +12,7 @@ export interface EditingPurchaseState {
   dateEnded: string;
   price: number;
   quantity: number;
+  store: string;
   notes: string;
 }
 
@@ -23,6 +24,7 @@ export const emptyEditingPurchase = (): EditingPurchaseState => ({
   dateEnded: "",
   price: 0,
   quantity: 1,
+  store: "",
   notes: "",
 });
 
@@ -120,6 +122,25 @@ const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
                 quantity: parseInt(e.target.value, 10) || 0,
               })
             }
+          />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="edit-purchase-store">
+            Де куплено
+          </label>
+          <input
+            id="edit-purchase-store"
+            type="text"
+            className="field"
+            value={editingPurchase.store}
+            onChange={(e) =>
+              onChange({
+                ...editingPurchase,
+                store: e.target.value,
+              })
+            }
+            placeholder="Необовʼязково"
           />
         </div>
 

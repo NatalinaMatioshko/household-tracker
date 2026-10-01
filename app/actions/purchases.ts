@@ -52,6 +52,7 @@ export async function createPurchase(
     }
 
     const notes = parsed.data.notes?.trim() || null;
+    const store = parsed.data.store?.trim() || null;
     const dateEnded = parsed.data.dateEnded
       ? parseDateOnly(parsed.data.dateEnded)
       : null;
@@ -63,6 +64,7 @@ export async function createPurchase(
         quantity: parsed.data.quantity,
         datePurchased: parseDateOnly(parsed.data.datePurchased),
         dateEnded,
+        store,
         notes,
       },
     });
@@ -96,6 +98,11 @@ export async function updatePurchase(input: unknown): Promise<ActionResult> {
         ? undefined
         : parsed.data.notes?.trim() || null;
 
+    const store =
+      parsed.data.store === undefined
+        ? undefined
+        : parsed.data.store?.trim() || null;
+
     const dateEnded =
       parsed.data.dateEnded === undefined
         ? undefined
@@ -110,6 +117,7 @@ export async function updatePurchase(input: unknown): Promise<ActionResult> {
         quantity: parsed.data.quantity,
         datePurchased: parseDateOnly(parsed.data.datePurchased),
         ...(dateEnded !== undefined ? { dateEnded } : {}),
+        ...(store !== undefined ? { store } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
     });

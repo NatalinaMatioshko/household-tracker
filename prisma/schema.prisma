@@ -1,5 +1,4 @@
-// Minimal MVP schema for Household Tracker.
-// Auth.js wiring comes in Phase 3 — User exists so Product can own userId.
+// Household Tracker schema — Auth.js + Prisma + PostgreSQL.
 
 generator client {
   provider = "prisma-client-js"
@@ -13,13 +12,17 @@ datasource db {
 enum Category {
   HYGIENE
   CARE
+  HOUSEHOLD_CHEMICALS
+  LAUNDRY
+  KITCHEN
+  OTHER
 }
 
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
   name         String?
-  /// Filled in Phase 3 (Auth.js email/password). Nullable until then.
+  /// Auth.js email/password hash.
   passwordHash String?
   products     Product[]
   createdAt    DateTime  @default(now())
@@ -31,6 +34,7 @@ model Product {
   userId    String
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
+  brand     String?
   category  Category
   purchases Purchase[]
   createdAt DateTime   @default(now())
@@ -47,6 +51,7 @@ model Purchase {
   quantity      Int       @default(1)
   datePurchased DateTime  @db.Date
   dateEnded     DateTime? @db.Date
+  store         String?
   notes         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

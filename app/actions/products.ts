@@ -55,6 +55,7 @@ export async function createProduct(input: unknown): Promise<ActionResult<{ id: 
       data: {
         userId,
         name: parsed.data.name,
+        brand: parsed.data.brand?.trim() || null,
         category: parsed.data.category,
       },
     });
@@ -90,6 +91,7 @@ export async function updateProduct(input: unknown): Promise<ActionResult> {
       where: { id: existing.id },
       data: {
         name: parsed.data.name,
+        brand: parsed.data.brand?.trim() || null,
         category: parsed.data.category,
       },
     });

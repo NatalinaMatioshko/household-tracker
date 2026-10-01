@@ -7,12 +7,14 @@ type DbPurchase = {
   quantity: number;
   datePurchased: Date;
   dateEnded: Date | null;
+  store: string | null;
   notes: string | null;
 };
 
 type DbProduct = {
   id: string;
   name: string;
+  brand: string | null;
   category: ProductCategory;
   purchases: DbPurchase[];
 };
@@ -22,6 +24,7 @@ export function mapDbProductToUi(product: DbProduct): Product {
   return {
     id: product.id,
     name: product.name,
+    brand: product.brand ?? undefined,
     category: product.category,
     purchases: product.purchases.map(mapDbPurchaseToUi),
   };
@@ -34,6 +37,7 @@ export function mapDbPurchaseToUi(purchase: DbPurchase): Purchase {
     quantity: purchase.quantity,
     datePurchased: toDateOnlyString(purchase.datePurchased),
     dateEnded: purchase.dateEnded ? toDateOnlyString(purchase.dateEnded) : null,
+    store: purchase.store ?? undefined,
     notes: purchase.notes ?? undefined,
   };
 }
