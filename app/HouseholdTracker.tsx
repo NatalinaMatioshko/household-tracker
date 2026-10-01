@@ -85,7 +85,7 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
       datePurchased: input.datePurchased,
       price: input.price,
       quantity: input.quantity,
-      notes: input.notes,
+      ...(input.notes ? { notes: input.notes } : {}),
     });
     if (!purchaseResult.ok) {
       setAddError(purchaseResult.error);
@@ -102,10 +102,10 @@ const HouseholdTracker: React.FC<HouseholdTrackerProps> = ({
     const result = await createPurchase({
       productId,
       datePurchased: purchase.datePurchased,
-      dateEnded: purchase.dateEnded || undefined,
+      ...(purchase.dateEnded ? { dateEnded: purchase.dateEnded } : {}),
       price: purchase.price,
       quantity: purchase.quantity,
-      notes: purchase.notes,
+      ...(purchase.notes ? { notes: purchase.notes } : {}),
     });
     if (!result.ok) {
       throw new Error(result.error);

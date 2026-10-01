@@ -90,6 +90,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
       });
       setNewProduct(emptyForm());
       setOpen(false);
+    } catch {
+      // Parent sets `error` prop; keep the form open for correction.
     } finally {
       setPending(false);
     }

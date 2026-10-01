@@ -28,8 +28,9 @@ export const createPurchaseSchema = z.object({
   price: z.number().finite().positive("Ціна має бути більшою за 0"),
   quantity: z.number().int().positive("Кількість має бути цілим числом > 0"),
   datePurchased: dateStringSchema,
-  dateEnded: dateStringSchema.nullable().optional(),
-  notes: z.string().trim().max(500).optional(),
+  // nullish: Server Actions often serialize missing optional fields as null
+  dateEnded: dateStringSchema.nullish(),
+  notes: z.string().trim().max(500).nullish(),
 });
 
 export const updatePurchaseSchema = z.object({
@@ -37,8 +38,8 @@ export const updatePurchaseSchema = z.object({
   price: z.number().finite().positive("Ціна має бути більшою за 0"),
   quantity: z.number().int().positive("Кількість має бути цілим числом > 0"),
   datePurchased: dateStringSchema,
-  dateEnded: dateStringSchema.nullable().optional(),
-  notes: z.string().trim().max(500).nullable().optional(),
+  dateEnded: dateStringSchema.nullish(),
+  notes: z.string().trim().max(500).nullish(),
 });
 
 export const purchaseIdSchema = z.object({
@@ -48,6 +49,25 @@ export const purchaseIdSchema = z.object({
 export const setDateEndedSchema = z.object({
   purchaseId: z.string().min(1),
   dateEnded: dateStringSchema.nullable(),
+});
+
+/** One-time localStorage → DB import payload (already normalized on the client). */
+export const importPurchaseSchema = z.object({
+  datePurchased: dateStringSchema,
+  dateEnded: dateStringSchema.nullish(),
+  price: z.number().finite().positive(),
+  quantity: z.number().int().positive(),
+  notes: z.string().trim().max(500).nullish(),
+});
+
+export const importProductSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  category: categorySchema,
+  purchases: z.array(importPurchaseSchema).max(200),
+});
+
+export const importLocalProductsSchema = z.object({
+  products: z.array(importProductSchema).min(1).max(200),
 });
 
 /** Parse YYYY-MM-DD as a UTC calendar date for Prisma @db.Date. */
