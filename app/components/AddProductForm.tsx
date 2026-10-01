@@ -119,7 +119,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
 
       <div
         id="add-product-panel"
-        className="add-form-panel"
+        className={`add-form-panel${open ? " is-open" : ""}`}
         aria-hidden={!open}
         inert={!open ? true : undefined}
       >
